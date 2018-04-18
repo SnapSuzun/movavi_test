@@ -28,3 +28,7 @@
     app\components\CurrencyConverter::getExchangeRateToLocalCurrency($currencyCharCode, $date)
 
 где `$currencyCharCode` - буквенный ИСО-код валюты (USD), `$date` - дата, на которую необходимо получить курс.
+
+При недоступности или наличии ошибок в ответе от сервисов генерируется исключение `app\components\http\HttpRequestException`.
+
+При некорректности передаваемых аргументов генерируется исключение `InvalidArgumentException`.
