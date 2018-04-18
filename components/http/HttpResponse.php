@@ -1,6 +1,6 @@
 <?php
 
-namespace app\components\integration;
+namespace app\components\http;
 
 /**
  * Ответ от внешего сервиса

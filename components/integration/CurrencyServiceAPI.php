@@ -2,7 +2,8 @@
 
 namespace app\components\integration;
 
-use app\components\integration\HttpResponse as CustomHttpResponse;
+use app\components\http\HttpRequestException;
+use app\components\http\HttpResponse;
 
 /**
  * Абстрактный класс для сервисов, содержащих информацию о курсе валют
@@ -12,6 +13,7 @@ use app\components\integration\HttpResponse as CustomHttpResponse;
  */
 abstract class CurrencyServiceAPI
 {
+    const DATE_FORMAT = 'd-m-Y';
     /**
      * @param string $currencyCharCode ISO-код валюты, для которой запрашивается курс
      * @param string $date Дата в виде строки
@@ -28,10 +30,10 @@ abstract class CurrencyServiceAPI
     protected static function prepareDate(string $date): string
     {
         if (!empty($date)) {
-            if (!($timestamp = strtotime($date))) {
-                throw new \InvalidArgumentException("Parameter date='{$date}' in incorrect format.");
+            if (!($timestamp = strtotime($date)) || $timestamp > time()) {
+                throw new \InvalidArgumentException("Parameter date='{$date}' is incorrect.");
             }
-            $date = date('d-m-Y', $timestamp);
+            $date = date(static::DATE_FORMAT, $timestamp);
         }
 
         return $date;
@@ -63,7 +65,7 @@ abstract class CurrencyServiceAPI
         $responseCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        return new CustomHttpResponse([
+        return new HttpResponse([
             'success' => $responseCode == 200,
             'httpCode' => $responseCode,
             'response' => $response

@@ -2,6 +2,8 @@
 
 namespace app\components\integration;
 
+use app\components\http\HttpRequestException;
+
 /**
  * Class RbcCurrencyServiceAPI
  * @package app\components\integration
@@ -15,6 +17,8 @@ class RbcCurrencyServiceAPI extends CurrencyServiceAPI
     const SOURCE_CBRF = 'cbrf';
     const SOURCE_FOREX = 'forex';
     const SOURCE_CASH = 'cash';
+
+    const DATE_FORMAT = 'Y-m-d';
 
     /**
      * Получение курса валюты за определенную дату по отношению к локальной

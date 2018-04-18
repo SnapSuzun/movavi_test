@@ -3,6 +3,7 @@
 namespace app\components\integration;
 
 
+use app\components\http\HttpRequestException;
 use app\helpers\ArrayHelper;
 use app\helpers\XmlHelper;
 
@@ -29,7 +30,7 @@ class CbrServiceApi extends CurrencyServiceAPI
     {
         $currencyRates = static::dailyCurrencyRates($date);
         if (!isset($currencyRates[$currencyCharCode])) {
-            throw new \InvalidArgumentException("Exchange rate for '{$currencyCharCode} not found.");
+            throw new \InvalidArgumentException("Exchange rate for '{$currencyCharCode}' not found.");
         }
         return $currencyRates[$currencyCharCode];
     }
@@ -41,7 +42,7 @@ class CbrServiceApi extends CurrencyServiceAPI
      * @throws HttpRequestException
      * @throws \InvalidArgumentException
      */
-    public static function dailyCurrencyRates(string $date = null): array
+    public static function dailyCurrencyRates(string $date = ''): array
     {
         $result = static::query(static::prepareUrlForDailyCurrencyRates(), static::prepareParams($date));
         if ($result->success) {
