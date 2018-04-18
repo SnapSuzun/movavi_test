@@ -18,24 +18,27 @@ class CbrServiceApi extends CurrencyServiceAPI
     /** Путь до АПИ для получения ежедневного курса валют */
     const API_DAILY_CURRENCY_RATES_LOCATION = 'XML_daily.asp';
 
-
     /**
      * Получение курса валюты за определенную дату по отношению к локальной
      * @param string $currencyCharCode
      * @param string|null $date
      * @return float
+     * @throws \InvalidArgumentException
      */
-    public static function getExchangeRateToLocalCurrency(string $currencyCharCode, string $date = null): float
+    public static function getExchangeRateToLocalCurrency(string $currencyCharCode, string $date = ''): float
     {
         $currencyRates = static::dailyCurrencyRates($date);
-        return $currencyRates[$currencyCharCode] ?? false;
+        if (!isset($currencyRates[$currencyCharCode])) {
+            throw new \InvalidArgumentException("Exchange rate for '{$currencyCharCode} not found.");
+        }
+        return $currencyRates[$currencyCharCode];
     }
 
     /**
      * Получение курсов валют за передаваемую дату в формате "чар-код валюты" => "курс валюты"
      * @param string|null $date
      * @return array
-     * @throws \HttpRequestException
+     * @throws HttpRequestException
      * @throws \InvalidArgumentException
      */
     public static function dailyCurrencyRates(string $date = null): array
@@ -44,15 +47,15 @@ class CbrServiceApi extends CurrencyServiceAPI
         if ($result->success) {
             $response = static::prepareResponse($result->response);
             if ($error = static::getErrorFromResponse($response)) {
-                throw new \HttpRequestException("Currency service response with error '{$error}'.");
+                throw new HttpRequestException("Currency service CBR response with error '{$error}'.");
             }
             if (!isset($response['Valute'])) {
-                throw new \InvalidArgumentException("Could not find any information about currency rates in response from currency service.");
+                throw new \InvalidArgumentException("Could not find any information about currency rates in response from currency service CBR.");
             }
             $currencyRates = ArrayHelper::map(static::prepareRates($response['Valute']), 'CharCode', 'Value');
             return $currencyRates;
         } else {
-            throw new \HttpRequestException("Currency service response with code {$result->httpCode}.");
+            throw new HttpRequestException("Currency service CBR response with code {$result->httpCode}.");
         }
     }
 
@@ -63,12 +66,13 @@ class CbrServiceApi extends CurrencyServiceAPI
      */
     protected static function prepareResponse(string $response): array
     {
-        $xmlElement = simplexml_load_string($response);
-        /** Если пришла одна валюта, то в итоге будет просто объект, а не массив, поэтому приводим к одному типу */
-        if (isset($xmlElement->Valute) && $xmlElement->Valute instanceof \SimpleXMLElement) {
-            $xmlElement->Valute = array($xmlElement->Valute);
+        $response = XmlHelper::xml2Array($response);
+
+        /** Если пришла одна валюта, то в итоге будет просто объект, а не массив, поэтому приводим к одному типу, зная, что у объекта есть поле с аттрибутами */
+        if (isset($response['Valute']) && isset($response['Valute']['@attributes'])) {
+            $response['Valute'] = array($response['Valute']);
         }
-        return XmlHelper::xml2Array($xmlElement);
+        return $response;
     }
 
     /**
@@ -89,7 +93,7 @@ class CbrServiceApi extends CurrencyServiceAPI
      */
     protected static function prepareUrlForDailyCurrencyRates(): string
     {
-        return rtrim('/', static::API_URL) . '/' . ltrim('/', static::API_DAILY_CURRENCY_RATES_LOCATION);
+        return rtrim(static::API_URL, '/') . '/' . ltrim(static::API_DAILY_CURRENCY_RATES_LOCATION, '/');
     }
 
     /**
@@ -100,7 +104,7 @@ class CbrServiceApi extends CurrencyServiceAPI
     protected static function getErrorFromResponse(array $response): string
     {
         if (isset($response['Valute'])) {
-            return null;
+            return false;
         }
 
         return $response[0] ?? '';
@@ -116,7 +120,7 @@ class CbrServiceApi extends CurrencyServiceAPI
         return array_map(function ($item) {
             if (isset($item['Value'])) {
                 /** В качестве разделителя дробной части сервис возвращает запятую, поэтому меняем ее принудительно на точку */
-                $item['Value'] = floatval(str_replace([',', ' ', '.'], ['.', '', ''], $item)) / ($item['Nominal'] ?? 1);
+                $item['Value'] = floatval(str_replace(',', '.', $item['Value'])) / ($item['Nominal'] ?? 1);
             }
             return $item;
         }, $valutes);

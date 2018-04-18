@@ -1,0 +1,19 @@
+{
+  "name": "snap/movavi_test",
+  "description": "Test exercise for Movavi",
+  "minimum-stability": "stable",
+  "authors": [
+    {
+      "name": "Snap",
+      "email": "nevzorovgosha@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "app\\": ""
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "6"
+  }
+}

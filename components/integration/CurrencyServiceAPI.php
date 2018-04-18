@@ -2,6 +2,8 @@
 
 namespace app\components\integration;
 
+use app\components\integration\HttpResponse as CustomHttpResponse;
+
 /**
  * Абстрактный класс для сервисов, содержащих информацию о курсе валют
  *
@@ -15,7 +17,7 @@ abstract class CurrencyServiceAPI
      * @param string $date Дата в виде строки
      * @return float
      */
-    public static abstract function getExchangeRateToLocalCurrency(string $currencyCharCode, string $date = null): float;
+    public static abstract function getExchangeRateToLocalCurrency(string $currencyCharCode, string $date = ''): float;
 
     /**
      * Преобразование даты в единый формат
@@ -41,7 +43,7 @@ abstract class CurrencyServiceAPI
      * @param string $url Адрес запроса
      * @param array $params Параметры для GET запроса
      * @return HttpResponse
-     * @throws \HttpRequestException
+     * @throws HttpRequestException
      */
     protected static function query(string $url, array $params = []): HttpResponse
     {
@@ -49,18 +51,19 @@ abstract class CurrencyServiceAPI
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         $response = curl_exec($ch);
         if ($response === false) {
             $error = curl_error($ch);
-            throw new \HttpRequestException("Request was crashed with error: {$error}");
+            throw new HttpRequestException("Request was crashed with error: {$error}");
         }
 
         $responseCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        return new HttpResponse([
+        return new CustomHttpResponse([
             'success' => $responseCode == 200,
             'httpCode' => $responseCode,
             'response' => $response

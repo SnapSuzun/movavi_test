@@ -20,7 +20,7 @@ class CurrencyConverter
      * @param string|null $date
      * @return float
      */
-    public static function getExchangeRateToLocalCurrency(string $currencyCharCode, string $date = null): float
+    public static function getExchangeRateToLocalCurrency(string $currencyCharCode, string $date = ''): float
     {
         $currencyServices = static::getCurrencyServiceClassNames();
         $exchangeRate = 0;

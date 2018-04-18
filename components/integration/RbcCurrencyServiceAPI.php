@@ -22,7 +22,7 @@ class RbcCurrencyServiceAPI extends CurrencyServiceAPI
      * @param string|null $date
      * @return float
      */
-    public static function getExchangeRateToLocalCurrency(string $currencyCharCode, string $date = null): float
+    public static function getExchangeRateToLocalCurrency(string $currencyCharCode, string $date = ''): float
     {
         return static::convertCurrency($currencyCharCode, static::getLocalCurrency(), 1, $date, static::getDefaultSource());
     }
@@ -35,30 +35,30 @@ class RbcCurrencyServiceAPI extends CurrencyServiceAPI
      * @param float $amount
      * @param string $source
      * @return float
-     * @throws \HttpRequestException
+     * @throws HttpRequestException
      * @throws \InvalidArgumentException
      */
-    public static function convertCurrency(string $currencyFromCharCode, string $currencyToCharCode, float $amount = 1, string $date = null, string $source = self::SOURCE_CBRF): float
+    public static function convertCurrency(string $currencyFromCharCode, string $currencyToCharCode, float $amount = 1, string $date = '', string $source = self::SOURCE_CBRF): float
     {
-        $queryParams = static::prepareParams($currencyFromCharCode, $currencyToCharCode, $date, $amount, $source);
+        $queryParams = static::prepareParams($currencyFromCharCode, $currencyToCharCode, $amount, $date, $source);
         $result = static::query(static::prepareUrlForConverter(), $queryParams);
 
         if ($result->success) {
             $response = static::prepareResponse($result->response);
             if (empty($response)) {
-                throw new \HttpRequestException("Currency service returned empty response.");
+                throw new HttpRequestException("Currency service RBC returned empty response.");
             }
 
             if ($error = static::getErrorFromResponse($response)) {
-                throw new \HttpRequestException("Currency service response with error '{$error}'.");
+                throw new HttpRequestException("Currency service RBC response with error '{$error}'.");
             }
 
             if (!isset($response['data']) || !isset($response['data']['sum_result'])) {
-                throw new \InvalidArgumentException("Could not find any information about currency rates in response from currency service.");
+                throw new \InvalidArgumentException("Could not find any information about currency rates in response from currency service RBC.");
             }
             return floatval($response['data']['sum_result']);
         } else {
-            throw new \HttpRequestException("Currency service response with code {$result->httpCode}.");
+            throw new HttpRequestException("Currency service RBC response with code {$result->httpCode}.");
         }
     }
 
@@ -81,7 +81,7 @@ class RbcCurrencyServiceAPI extends CurrencyServiceAPI
      * @param string $source
      * @return array
      */
-    protected static function prepareParams(string $currencyFromCharCode, string $currencyToCharCode, float $amount = 1, string $date = null, string $source = self::SOURCE_CBRF): array
+    protected static function prepareParams(string $currencyFromCharCode, string $currencyToCharCode, float $amount = 1, string $date = '', string $source = self::SOURCE_CBRF): array
     {
         return [
             'currency_from' => $currencyFromCharCode,
